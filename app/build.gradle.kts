@@ -68,6 +68,8 @@ dependencies {
 
     implementation("androidx.paging:paging-runtime:3.2.1")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation ("com.airbnb.android:lottie-compose:6.0.0")
+    implementation("androidx.compose.foundation:foundation:1.5.0") // or higher
 
 
     implementation(libs.coroutine)
