@@ -22,35 +22,21 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.astrovibe.ui.AstrologerViewModel
+import com.example.astrovibe.ui.UserViewModel
 import java.time.format.DateTimeFormatter
+import com.google.firebase.auth.FirebaseAuth
+import androidx.navigation.NavController
 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun UserProfileScreen() {
-    val viewModel: AstrologerViewModel = hiltViewModel()
+fun UserProfileScreen(navController: NavController) {
+    val viewModel: UserViewModel = hiltViewModel()
     val user = viewModel.getUserData()
 
     val numerologyNumber = user.numerology.let {
         if (it in 1..9) it else 0
     }
-
-    // Function to map numerology number to emoji size
-    fun numerologyFontSize(num: Int): TextUnit = 40.sp
-//        when (num) {
-//        1 -> 40.sp
-//        2 -> 44.sp
-//        3 -> 48.sp
-//        4 -> 52.sp
-//        5 -> 56.sp
-//        6 -> 60.sp
-//        7 -> 64.sp
-//        8 -> 68.sp
-//        9 -> 72.sp
-//        else -> 40.sp
-//    }
-
 
     Card(
         modifier = Modifier
@@ -160,7 +146,7 @@ fun UserProfileScreen() {
                 ) {
                     Text(
                         text = "🔮",
-                        fontSize = numerologyFontSize(numerologyNumber),
+                        fontSize = 40.sp,
                         modifier = Modifier.padding(end = 12.dp)
                     )
                     Column {
@@ -178,8 +164,31 @@ fun UserProfileScreen() {
                     }
                 }
             }
+            LogoutButton(navController)
         }
     }
 }
+
+
+
+@Composable
+fun LogoutButton(navController: NavController) {
+    Button(
+        onClick = {
+            FirebaseAuth.getInstance().signOut()
+            navController.navigate("auth") {
+                popUpTo(0)
+                launchSingleTop = true
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+    ) {
+        Text(text = "Logout", color = Color.White)
+    }
+}
+
 
 

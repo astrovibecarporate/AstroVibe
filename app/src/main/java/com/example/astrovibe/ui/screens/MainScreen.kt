@@ -14,12 +14,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import androidx.navigation.compose.*
+import com.example.astrovibe.ui.NavGraph
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     data object Home : BottomNavItem("home", "Home", Icons.Default.Home)
@@ -33,9 +35,13 @@ sealed class BottomNavItem(val route: String, val label: String, val icon: Image
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    val currentBackStack by navController.currentBackStackEntryAsState()
+    val currentDestination = currentBackStack?.destination?.route
+    val showBottomBar = currentDestination in listOf(BottomNavItem.Home.route, BottomNavItem.Numerology.route, BottomNavItem.Horoscope.route, BottomNavItem.Remedies.route, BottomNavItem.User.route)
 
     Scaffold(
         bottomBar = {
+            if(showBottomBar)
             BottomNavigationBar(navController)
         },
         topBar = {
@@ -47,17 +53,7 @@ fun MainScreen() {
             )
         }
     ) { padding ->
-        NavHost(
-            navController,
-            startDestination = BottomNavItem.Home.route,
-            modifier = Modifier.padding(padding)
-        ) {
-            composable(BottomNavItem.Home.route) { AstrologerListScreen() }
-            composable(BottomNavItem.Numerology.route) { NumerologyScreen() }
-            composable(BottomNavItem.Horoscope.route) { HoroscopeScreen() }
-            composable(BottomNavItem.Remedies.route) { RemediesScreen() }
-            composable(BottomNavItem.User.route) { UserProfileScreen() }
-        }
+        NavGraph(navController, padding)
     }
 }
 

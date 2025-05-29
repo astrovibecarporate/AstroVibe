@@ -45,25 +45,4 @@ class AstrologerViewModel @Inject constructor(
             }
         }
     }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun getUserData(): User{
-        val user = User(
-            id = 1,
-            name = "John Doe",
-            age = 28,
-            email = "john.doe@gmail.com",
-            password = "Secret@123",
-            imageName = null,
-            dateOfBirth = LocalDate.of(1995, 12, 15),
-            timeOfBirth = LocalTime.of(10, 30, 0),
-            contactNumber = "9876543210",
-            place = "New York",
-            gender = "Male",
-            walletBalance = 1500.75,
-            astrologerId = 101,
-            numerology = 1
-        )
-        return user
-    }
 }

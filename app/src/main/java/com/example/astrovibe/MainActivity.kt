@@ -31,8 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import com.example.astrovibe.data.models.Resource
 import com.example.astrovibe.ui.screens.MainScreen
+import com.example.astrovibe.ui.screens.SplashScreen
 import com.example.astrovibe.ui.theme.AstroVibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
