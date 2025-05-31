@@ -32,11 +32,12 @@ import androidx.navigation.NavController
 @Composable
 fun UserProfileScreen(navController: NavController) {
     val viewModel: UserViewModel = hiltViewModel()
-    val user = viewModel.getUserData()
+    val user = viewModel.getUserLocalData()
 
-    val numerologyNumber = user.numerology.let {
+    val numerologyNumber = 2
+        /*user.numerology.let {
         if (it in 1..9) it else 0
-    }
+    }*/
 
     Card(
         modifier = Modifier
@@ -52,7 +53,7 @@ fun UserProfileScreen(navController: NavController) {
                 Icon(Icons.Default.AccountCircle, contentDescription = "Name", tint = Color(0xFF388E3C))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "${user.name}, ${user.age}",
+                    text = "${user.name}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
                     color = Color(0xFF2E7D32)
@@ -64,7 +65,7 @@ fun UserProfileScreen(navController: NavController) {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Icon(Icons.Default.Email, contentDescription = "Email", tint = Color(0xFF1976D2))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = user.email, fontSize = 16.sp)
+                Text(text = user.email.toString(), fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -80,7 +81,7 @@ fun UserProfileScreen(navController: NavController) {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Icon(Icons.Default.LocationOn, contentDescription = "Place", tint = Color(0xFFD84315))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = user.place, fontSize = 16.sp)
+                Text(text = user.birthLocation.toString(), fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -89,7 +90,7 @@ fun UserProfileScreen(navController: NavController) {
                 Icon(Icons.Default.CalendarToday, contentDescription = "DOB", tint = Color(0xFF5D4037))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = user.dateOfBirth.format(DateTimeFormatter.ofPattern("dd MMM yyyy")),
+                    text = user.dateOfBirth?.format(DateTimeFormatter.ofPattern("dd MMM yyyy")).toString(),
                     fontSize = 16.sp
                 )
             }
@@ -99,7 +100,7 @@ fun UserProfileScreen(navController: NavController) {
                 Icon(Icons.Default.AccessTime, contentDescription = "Time of Birth", tint = Color(0xFF6A1B9A))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = user.timeOfBirth.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                    text = user.timeOfBirth?.format(DateTimeFormatter.ofPattern("HH:mm:ss")).toString(),
                     fontSize = 16.sp
                 )
             }

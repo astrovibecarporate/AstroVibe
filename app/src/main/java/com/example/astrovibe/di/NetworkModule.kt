@@ -2,8 +2,11 @@ package com.example.astrovibe.di
 
 import android.content.Context
 import com.example.astrovibe.data.remote.AstrologerApi
+import com.example.astrovibe.data.remote.UserApiService
 import com.example.astrovibe.data.repo.AstrologerRepo
 import com.example.astrovibe.data.repo.AstrologerRepoImpl
+import com.example.astrovibe.data.repo.UserRepo
+import com.example.astrovibe.data.repo.UserRepoImpl
 import com.example.astrovibe.data.utils.AppPreferences
 import com.example.astrovibe.data.utils.Utils
 import com.google.firebase.auth.FirebaseAuth
@@ -35,7 +38,6 @@ object NetworkModule {
 
         val headerInterceptor = Interceptor { chain ->
             val request = chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer YOUR_TOKEN")
                 .addHeader("Accept", "application/json")
                 .build()
             chain.proceed(request)
@@ -63,6 +65,12 @@ object NetworkModule {
             .build()
     }
 
+    @Provides
+    @Singleton
+    fun provideAppPreferences(@ApplicationContext context: Context): AppPreferences {
+        return AppPreferences(context)
+    }
+
 
     @Provides
     @Singleton
@@ -72,6 +80,15 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAstrologerRepo(api: AstrologerApi): AstrologerRepo = AstrologerRepoImpl(api)
+
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService = retrofit.create(UserApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserRepo(api: UserApiService): UserRepo = UserRepoImpl(api)
 
     @Provides
     fun provideFirebaseAuth(): FirebaseAuth {
@@ -84,9 +101,6 @@ object NetworkModule {
     }
 
 
-    @Provides
-    @Singleton
-    fun provideAppPreferences(@ApplicationContext context: Context): AppPreferences {
-        return AppPreferences(context)
-    }
+
+
 }

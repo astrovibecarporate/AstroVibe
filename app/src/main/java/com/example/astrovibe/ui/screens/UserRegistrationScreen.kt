@@ -21,21 +21,28 @@ import java.time.LocalDate
 import java.time.LocalTime
 import android.util.Patterns
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.astrovibe.data.models.BirthLocation
+import com.example.astrovibe.data.models.Resource
+import com.example.astrovibe.data.models.User
+import com.example.astrovibe.ui.UserViewModel
 import com.example.astrovibe.ui.components.ClearableOutlinedTextField
+import com.google.firebase.auth.FirebaseAuth
+import com.google.gson.Gson
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
+
+    val viewModel: UserViewModel = hiltViewModel()
     var name by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf<String?>(null) }
     var email by remember { mutableStateOf("") }
 
     var selectedDOB by remember { mutableStateOf<LocalDate?>(null) }
     var selectedTOB by remember { mutableStateOf(LocalTime.MIDNIGHT) }
-    var placeOfBirth by remember { mutableStateOf("") }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -49,20 +56,24 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
     val isFormValid =
         name.isNotBlank() && gender != null && email.isNotBlank() && isEmailValid(email)
 
-    // Listen for selected address from LocationSearchScreen via savedStateHandle
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    val selectedAddressFromSearch = savedStateHandle
-        ?.getLiveData<String>("selected_address")
-        ?.observeAsState()
+    val json = savedStateHandle?.getLiveData<String>("selected_address")?.observeAsState()
 
-    // Update placeOfBirth when a new address is selected
-    LaunchedEffect(selectedAddressFromSearch?.value) {
-        selectedAddressFromSearch?.value?.let { address ->
-            placeOfBirth = address
-            // Clear it so it doesn't trigger again unintentionally
-            savedStateHandle?.remove<String>("selected_address")
+    // Define default empty BirthLocation
+    val defaultAddress = BirthLocation("", "", "", 0.0, 0.0)
+
+    // Use remember to parse JSON into BirthLocation, or fallback to default
+    val selectedAddress = remember(json?.value) {
+        json?.value?.let { Gson().fromJson(it, BirthLocation::class.java) } ?: defaultAddress
+    }
+
+    // React when selectedAddress is updated (and not default)
+    LaunchedEffect(json?.value) {
+        if (json?.value != null) {
+            savedStateHandle?.remove<String>("selected_address") // Clear saved state after use
         }
     }
+
 
     // Date Picker Dialog
     if (showDatePicker) {
@@ -86,7 +97,7 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         android.app.TimePickerDialog(
             context,
             { _, hour, minute ->
-                selectedTOB = LocalTime.of(hour, minute)
+                selectedTOB = LocalTime.of(hour, minute).withSecond(0)
                 showTimePicker = false
             },
             currentHour,
@@ -175,7 +186,7 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
 
         // Place of Birth input (readonly, clickable to navigate)
         OutlinedTextField(
-            value = placeOfBirth,
+            value = selectedAddress.toString(),
             onValueChange = { /* no manual edit */ },
             label = { Text("Place of Birth") },
             leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
@@ -189,20 +200,28 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         )
         Spacer(Modifier.height(24.dp))
 
+        val userState by viewModel.user.collectAsState()
+
+        var isSubmitted by remember { mutableStateOf(false) }
+
         Button(
             onClick = {
-                val userData = UserRegistrationData(
-                    name = name,
-                    gender = gender ?: "",
-                    email = email,
-                    phone = phoneNumber,
-                    dob = selectedDOB,
-                    tob = selectedTOB,
-                    placeOfBirth = placeOfBirth
-                )
-                // TODO: Save userData and navigate
-                navController.navigate("home") {
-                    popUpTo("user_registration") { inclusive = true }
+                Log.e("UserRegistrationScreen", "Date ${selectedDOB.toString()}   time ${selectedTOB.toString()}")
+                FirebaseAuth.getInstance().currentUser?.uid?.let { fid ->
+                    val userData = User(
+                        fid = fid,
+                        name = name,
+                        gender = gender ?: "",
+                        email = email ?: "",
+                        imageUrl = "",
+                        contactNumber = phoneNumber.removePrefix("+91"),
+                        dateOfBirth = selectedDOB.toString(),
+                        timeOfBirth = selectedTOB.withSecond(0).toString(),
+                        birthLocation = selectedAddress,
+                        walletBalance = 0.0
+                    )
+                    isSubmitted = true
+                    viewModel.createUser(userData)
                 }
             },
             enabled = isFormValid,
@@ -210,5 +229,14 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         ) {
             Text("Submit")
         }
+
+        LaunchedEffect(userState) {
+            if (isSubmitted && userState is Resource.Success) {
+                navController.navigate("home") {
+                    popUpTo("user_registration") { inclusive = true }
+                }
+            }
+        }
+
     }
 }

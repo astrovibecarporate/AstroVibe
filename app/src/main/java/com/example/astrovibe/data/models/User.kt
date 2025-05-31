@@ -4,18 +4,15 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 data class User(
-    val id: Int,
+    val fid: String,
     val name: String,
-    val age: Int,
-    val email: String,
-    val password: String,
-    val imageName: String?,
-    val dateOfBirth: LocalDate,
-    val timeOfBirth: LocalTime,
+    val email: String?,
+    val imageUrl: String? = null,
+    val dateOfBirth: String? = null,
+    val timeOfBirth: String? = null,
     val contactNumber: String,
-    val place: String,
     val gender: String,
+    val birthLocation: BirthLocation?,
     val walletBalance: Double,
-    val astrologerId: Int,
-    val numerology : Int
 )
+
