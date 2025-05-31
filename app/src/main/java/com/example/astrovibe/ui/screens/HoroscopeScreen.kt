@@ -32,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.astrovibe.data.models.ZodiacInfo
 import com.example.astrovibe.data.models.ZodiacItem
 import com.example.astrovibe.ui.HoroscopeViewModel
+import com.example.astrovibe.ui.components.DOBPicker
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.*
@@ -125,50 +126,6 @@ fun ZodiacSelector(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun DOBPicker(
-    selectedDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit
-) {
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
-
-    val datePickerDialog = remember {
-        DatePickerDialog(
-            context,
-            { _, year, month, day ->
-                onDateSelected(LocalDate.of(year, month + 1, day))
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-    }
-
-    Button(
-        onClick = { datePickerDialog.show() },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(Color(0xFF8E2DE2), Color(0xFF4A00E0))
-                )
-            ),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
-    ) {
-        Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Color.White)
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = selectedDate?.toString() ?: "Select Date of Birth",
-            color = Color.White,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
 
 @Composable
 fun ZodiacDetails(info: ZodiacInfo) {

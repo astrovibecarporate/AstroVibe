@@ -1,3 +1,4 @@
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,15 +39,17 @@ import com.example.astrovibe.ui.AstrologerViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.astrovibe.data.utils.Utils
+import com.google.firebase.auth.FirebaseAuth
 
-
-private val LightSaffron = Color(0xFFFFF4E1) // pale saffron
 
 @Composable
-fun AstrologerListScreen() {
+fun AstrologerListScreen(navController: NavController) {
     val viewModel: AstrologerViewModel = hiltViewModel()
     val astrologersState: Resource<List<Astrologer>> = viewModel.astrologers.collectAsState().value
-
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    Log.e("FIREBASE_ASHISH", "currentUserId for Astro $currentUserId")
     var selectedFilter by remember { mutableStateOf("All") }
     var lastClickedFilter by remember { mutableStateOf("All") }
 
@@ -56,21 +59,33 @@ fun AstrologerListScreen() {
         "Love" -> (astrologersState as? Resource.Success)?.data?.filter {
             it.knowledge.contains("vedic", true) || it.knowledge.contains("torat", true)
         } ?: emptyList()
+
         "Marriage" -> (astrologersState as? Resource.Success)?.data?.filter {
             it.knowledge.contains("vedic", true) || it.knowledge.contains("palmistry", true)
         } ?: emptyList()
+
         "Career" -> (astrologersState as? Resource.Success)?.data?.filter {
             it.knowledge.contains("numerology", true) || it.knowledge.contains("vedic", true)
         } ?: emptyList()
+
         "Education" -> (astrologersState as? Resource.Success)?.data?.filter {
-            it.knowledge.contains("numerology", true) || it.knowledge.contains("vedic", true) || it.knowledge.contains("torat", true)
+            it.knowledge.contains("numerology", true) || it.knowledge.contains(
+                "vedic",
+                true
+            ) || it.knowledge.contains("torat", true)
         } ?: emptyList()
+
         "Health" -> (astrologersState as? Resource.Success)?.data?.filter {
             it.knowledge.contains("palmistry", true) || it.knowledge.contains("vedic", true)
         } ?: emptyList()
+
         "Wealth" -> (astrologersState as? Resource.Success)?.data?.filter {
-            it.knowledge.contains("palmistry", true) || it.knowledge.contains("numerology", true) || it.knowledge.contains("vedic", true)
+            it.knowledge.contains("palmistry", true) || it.knowledge.contains(
+                "numerology",
+                true
+            ) || it.knowledge.contains("vedic", true)
         } ?: emptyList()
+
         else -> (astrologersState as? Resource.Success)?.data ?: emptyList()
     }
 
@@ -87,7 +102,7 @@ fun AstrologerListScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(LightSaffron)
+            .background(Utils.LightSaffron)
             .padding(16.dp) // You can also pass padding as param if coming from Scaffold
     ) {
         LazyRow(modifier = Modifier.padding(bottom = 8.dp)) {
@@ -98,7 +113,6 @@ fun AstrologerListScreen() {
                         if (selectedFilter == filter && lastClickedFilter == filter) {
                             selectedFilter = "All"
                             lastClickedFilter = "All"
-
 
 
                         } else {
@@ -132,7 +146,7 @@ fun AstrologerListScreen() {
             is Resource.Success -> {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(filteredList) { astro ->
-                        AstrologerItem(astro)
+                        AstrologerItem(navController, astro)
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
@@ -149,12 +163,8 @@ fun AstrologerListScreen() {
 }
 
 
-
-
-
-
 @Composable
-fun AstrologerItem(astro: Astrologer) {
+fun AstrologerItem(navController: NavController, astro: Astrologer) {
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(6.dp),
@@ -197,7 +207,7 @@ fun AstrologerItem(astro: Astrologer) {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(astro.name, fontWeight = FontWeight.Bold , fontSize = 18.sp )
+                        Text(astro.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(modifier = Modifier.width(6.dp))
                         if (astro.verified) {
                             Icon(
@@ -218,7 +228,7 @@ fun AstrologerItem(astro: Astrologer) {
                         Text(astro.orders)
                         Spacer(modifier = Modifier.weight(1f))
                         Button(
-                            onClick = { /* TODO: handle chat click */ },
+                            onClick = { navController.navigate("chat/${astro.id}") },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                             shape = RoundedCornerShape(6.dp),   // less round corners
                             modifier = Modifier
@@ -234,6 +244,7 @@ fun AstrologerItem(astro: Astrologer) {
         }
     }
 }
+
 
 // Example StarRating with proper size so stars don't get cut off
 @Composable
@@ -252,6 +263,7 @@ fun StarRating(rating: Double, modifier: Modifier = Modifier) {
                         modifier = Modifier.size(16.dp)
                     )
                 }
+
                 index == fullStars && hasHalfStar -> {
                     Icon(
                         imageVector = Icons.Default.StarHalf,  // Use half star icon
@@ -260,6 +272,7 @@ fun StarRating(rating: Double, modifier: Modifier = Modifier) {
                         modifier = Modifier.size(16.dp)
                     )
                 }
+
                 else -> {
                     Icon(
                         imageVector = Icons.Default.Star,

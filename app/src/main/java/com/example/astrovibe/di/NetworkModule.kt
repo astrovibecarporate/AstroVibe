@@ -1,12 +1,17 @@
 package com.example.astrovibe.di
 
+import android.content.Context
 import com.example.astrovibe.data.remote.AstrologerApi
 import com.example.astrovibe.data.repo.AstrologerRepo
 import com.example.astrovibe.data.repo.AstrologerRepoImpl
+import com.example.astrovibe.data.utils.AppPreferences
 import com.example.astrovibe.data.utils.Utils
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -68,5 +73,20 @@ object NetworkModule {
     @Singleton
     fun provideAstrologerRepo(api: AstrologerApi): AstrologerRepo = AstrologerRepoImpl(api)
 
+    @Provides
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
 
+    @Provides
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideAppPreferences(@ApplicationContext context: Context): AppPreferences {
+        return AppPreferences(context)
+    }
 }

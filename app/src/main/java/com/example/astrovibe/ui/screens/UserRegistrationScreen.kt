@@ -3,7 +3,9 @@ package com.example.astrovibe.ui.screens
 import android.app.DatePickerDialog
 import android.location.Address
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,12 +20,11 @@ import com.example.astrovibe.data.models.UserRegistrationData
 import java.time.LocalDate
 import java.time.LocalTime
 import android.util.Patterns
-import androidx.compose.foundation.clickable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.astrovibe.ui.components.ClearableOutlinedTextField
-import com.example.astrovibe.ui.components.LocationSearchBar
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -36,10 +37,10 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
     var selectedTOB by remember { mutableStateOf(LocalTime.MIDNIGHT) }
     var placeOfBirth by remember { mutableStateOf("") }
 
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
-    var showLocationSearch by remember { mutableStateOf(false) }
-    var selectedAddress by remember { mutableStateOf<Address?>(null) }
-
+    val context = LocalContext.current
 
     fun isEmailValid(email: String): Boolean {
         return Patterns.EMAIL_ADDRESS.matcher(email).matches()
@@ -48,10 +49,22 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
     val isFormValid =
         name.isNotBlank() && gender != null && email.isNotBlank() && isEmailValid(email)
 
-    val context = LocalContext.current
+    // Listen for selected address from LocationSearchScreen via savedStateHandle
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+    val selectedAddressFromSearch = savedStateHandle
+        ?.getLiveData<String>("selected_address")
+        ?.observeAsState()
 
-    // Date picker dialog state
-    var showDatePicker by remember { mutableStateOf(false) }
+    // Update placeOfBirth when a new address is selected
+    LaunchedEffect(selectedAddressFromSearch?.value) {
+        selectedAddressFromSearch?.value?.let { address ->
+            placeOfBirth = address
+            // Clear it so it doesn't trigger again unintentionally
+            savedStateHandle?.remove<String>("selected_address")
+        }
+    }
+
+    // Date Picker Dialog
     if (showDatePicker) {
         val today = java.util.Calendar.getInstance()
         DatePickerDialog(
@@ -66,8 +79,7 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         ).show()
     }
 
-    // Time picker dialog state
-    var showTimePicker by remember { mutableStateOf(false) }
+    // Time Picker Dialog
     if (showTimePicker) {
         val currentHour = selectedTOB.hour
         val currentMinute = selectedTOB.minute
@@ -118,9 +130,6 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
 
         Spacer(Modifier.height(12.dp))
 
-        // Input fields with ClearableOutlinedTextField
-
-
         ClearableOutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -164,38 +173,20 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         }
         Spacer(Modifier.height(12.dp))
 
-        /*OutlinedTextField(
+        // Place of Birth input (readonly, clickable to navigate)
+        OutlinedTextField(
             value = placeOfBirth,
-            onValueChange = { placeOfBirth = it },
+            onValueChange = { /* no manual edit */ },
             label = { Text("Place of Birth") },
             leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-            modifier = Modifier.fillMaxWidth()
-        )*/
-
-        if (showLocationSearch) {
-            LocationSearchBar(
-                context = context,
-                onLocationSelected = { address ->
-                    placeOfBirth = address.getAddressLine(0) ?: ""
-                    selectedAddress = address
-                    showLocationSearch = false // go back to registration screen
-                }
-            )
-        } else {
-            OutlinedTextField(
-                value = placeOfBirth,
-                onValueChange = { /* optional if you want manual edit */ },
-                label = { Text("Place of Birth") },
-                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showLocationSearch = true }
-                    .then(Modifier.pointerInput(Unit) {
-                        // Disable keyboard on click, because editable is false by default here
-                    }),
-                readOnly = true // prevent keyboard on click
-            )
-        }
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    Log.d("UserRegistrationScreen", "Place of Birth clicked")
+                    navController.navigate("location_search")
+                },
+            readOnly = true
+        )
         Spacer(Modifier.height(24.dp))
 
         Button(

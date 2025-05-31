@@ -1,4 +1,8 @@
+// UserAuthScreen.kt
+package com.example.astrovibe.ui.screens
+
 import android.app.Activity
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,13 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.astrovibe.ui.UserAuthViewModel
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.*
 import java.util.concurrent.TimeUnit
 
 @Composable
 fun UserAuthScreen(navController: NavController) {
+
+    val viewModel: UserAuthViewModel = hiltViewModel()
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
@@ -26,18 +34,18 @@ fun UserAuthScreen(navController: NavController) {
     var loading by remember { mutableStateOf(false) }
 
     val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+        // Auto Verification Flow like reading OTP SMS
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
             auth.signInWithCredential(credential).addOnCompleteListener {
                 if (it.isSuccessful) {
-                    navController.navigate("astrologer_list") {
-                        popUpTo("auth") { inclusive = true }
-                    }
+                    navigateToRegistration(navController, auth, viewModel.isUserAstrologer())
                 }
             }
         }
 
         override fun onVerificationFailed(e: FirebaseException) {
             Toast.makeText(context, "Verification failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            loading = false
         }
 
         override fun onCodeSent(verificationIdParam: String, token: PhoneAuthProvider.ForceResendingToken) {
@@ -48,11 +56,13 @@ fun UserAuthScreen(navController: NavController) {
     }
 
     LaunchedEffect(Unit) {
-        if (auth.currentUser != null) {
-            navController.navigate("astrologer_list") {
-                popUpTo("auth") { inclusive = true }
-            }
+        loading = true
+        Log.e("ASHISH_FIREBASE", "LaunchedEffect called")
+        auth.currentUser?.let {
+            navigateHomePage(navController, viewModel.isUserAstrologer())
+            return@LaunchedEffect
         }
+        loading = false
     }
 
     Column(
@@ -66,7 +76,7 @@ fun UserAuthScreen(navController: NavController) {
             OutlinedTextField(
                 value = phoneInput,
                 onValueChange = {
-                    if (it.length <= 10 && it.all { char -> char.isDigit() }) phoneInput = it
+                    if (it.length <= 10 && it.all { ch -> ch.isDigit() }) phoneInput = it
                 },
                 label = { Text("Phone Number") },
                 leadingIcon = { Text("+91", modifier = Modifier.padding(start = 8.dp)) },
@@ -107,11 +117,10 @@ fun UserAuthScreen(navController: NavController) {
             Button(
                 onClick = {
                     val credential = PhoneAuthProvider.getCredential(verificationId, otp)
+                    // Sign in with manual otp
                     auth.signInWithCredential(credential).addOnCompleteListener {
                         if (it.isSuccessful) {
-                            navController.navigate("home") {
-                                popUpTo("auth") { inclusive = true }
-                            }
+                            navigateToRegistration(navController, auth, viewModel.isUserAstrologer())
                         } else {
                             Toast.makeText(context, "Invalid OTP", Toast.LENGTH_SHORT).show()
                         }
@@ -124,3 +133,30 @@ fun UserAuthScreen(navController: NavController) {
         }
     }
 }
+
+
+fun navigateToRegistration(navController: NavController,auth: FirebaseAuth,isPreOnboardedAstrologer: Boolean){
+    if(isPreOnboardedAstrologer) {
+        navController.navigate("astrologer_registration/${auth.currentUser?.phoneNumber ?: ""}") {
+            popUpTo("auth") { inclusive = true }
+        }
+    }else{
+        navController.navigate("user_registration/${auth.currentUser?.phoneNumber ?: ""}") {
+            popUpTo("auth") { inclusive = true }
+        }
+    }
+}
+
+fun navigateHomePage(navController: NavController,isPreOnboardedAstrologer: Boolean){
+    if(isPreOnboardedAstrologer) {
+        navController.navigate("astro_home") { // TODO Astrologer home screen
+            popUpTo("auth") { inclusive = true }
+        }
+    }else{
+        navController.navigate("home") { // TODO  home screen
+            popUpTo("auth") { inclusive = true }
+        }
+    }
+}
+
+
