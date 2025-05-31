@@ -17,8 +17,8 @@ import java.time.LocalDate
 
 object Utils {
 
-    const val BASE_URL = "http://192.168.1.2:9999"
-    const val API_KEY = "AIzaSyCXTsI9xZM3crB6gJUhiNWBRx2LtvhtoR8"
+    const val BASE_URL = ""
+    const val API_KEY = ""
     val LightSaffron = Color(0xFFFFF4E1) // pale saffron
     @RequiresApi(Build.VERSION_CODES.O)
     fun getZodiacFromDate(date: LocalDate): String {
