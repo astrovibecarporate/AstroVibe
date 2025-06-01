@@ -33,6 +33,7 @@ class UserViewModel @Inject constructor(
     val user: StateFlow<Resource<User>> = _user.asStateFlow()
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun createUser(user: User) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.createUser(user).onStart {
@@ -45,7 +46,7 @@ class UserViewModel @Inject constructor(
         }
     }
 
-    private fun getUser(userId: String) {
+    fun getUser(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.getUser(userId).onStart {
                 _user.value = Resource.Loading
@@ -72,5 +73,25 @@ class UserViewModel @Inject constructor(
             birthLocation = appPreferences.getBirthLocation(),
             walletBalance = appPreferences.getWalletBalance(),
         )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateUserAppPreferences(user: User?) {
+        if (user != null) {
+            appPreferences.setUserId(user.fid)
+            appPreferences.setName(user.name)
+            appPreferences.setEmail(user.email)
+            appPreferences.setImageUrl(user.imageUrl)
+            appPreferences.setDateOfBirth(LocalDate.parse(user.dateOfBirth))
+            appPreferences.setTimeOfBirth(LocalTime.parse(user.timeOfBirth))
+            appPreferences.setContactNumber(user.contactNumber)
+            appPreferences.setGender(user.gender)
+            user.birthLocation?.let { appPreferences.setBirthLocation(it) }
+            appPreferences.setWalletBalance(user.walletBalance)
+        }
+    }
+
+    fun clearUserLocalData(){
+        appPreferences.clearAll()
     }
 }

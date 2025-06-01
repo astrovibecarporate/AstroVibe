@@ -165,7 +165,7 @@ fun UserProfileScreen(navController: NavController) {
                     }
                 }
             }
-            LogoutButton(navController)
+            LogoutButton(navController, viewModel)
         }
     }
 }
@@ -173,10 +173,11 @@ fun UserProfileScreen(navController: NavController) {
 
 
 @Composable
-fun LogoutButton(navController: NavController) {
+fun LogoutButton(navController: NavController, viewModel: UserViewModel) {
     Button(
         onClick = {
             FirebaseAuth.getInstance().signOut()
+            viewModel.clearUserLocalData()
             navController.navigate("auth") {
                 popUpTo(0)
                 launchSingleTop = true

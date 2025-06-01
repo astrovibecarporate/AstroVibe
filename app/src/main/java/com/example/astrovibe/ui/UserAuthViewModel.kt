@@ -34,6 +34,11 @@ class UserAuthViewModel @Inject constructor(
         return appPreferences.isUserAstrologer()
     }
 
+    fun isUserOnboard(): Boolean {
+        Log.e("ASHISH_FIREBASE", "isUserOnboard called ${!appPreferences.getName().isNullOrEmpty()}  name ${appPreferences.getName()}")
+        return !appPreferences.getName().isNullOrEmpty()
+    }
+
     private fun getAllPreOnBoardedAstrologer() {
         viewModelScope.launch(Dispatchers.IO) {
             val remoteConfig = Firebase.remoteConfig

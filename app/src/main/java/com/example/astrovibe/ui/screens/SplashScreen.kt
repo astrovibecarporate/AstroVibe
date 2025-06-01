@@ -27,9 +27,19 @@ fun SplashScreen(navController: NavController) {
         delay(2000) // Show splash for 2 seconds
 
         val currentUser = auth.currentUser
-        if (currentUser != null) {
-            navigateToRegistration(navController,auth,viewModel.isUserAstrologer())
-        } else {
+        if (currentUser != null && viewModel.isUserOnboard()) { // User has logged and Onboarded
+            navigateHomePage(navController,viewModel.isUserAstrologer())
+        } else if (currentUser != null){ // User has firebase logged in but not onboarded
+            if(viewModel.isUserAstrologer()){
+                navController.navigate("astrologer_registration/${auth.currentUser?.phoneNumber ?: ""}") {
+                    popUpTo("auth") { inclusive = true }
+                }
+            }else {
+                navController.navigate("user_registration/${auth.currentUser?.phoneNumber ?: ""}") {
+                    popUpTo("auth") { inclusive = true }
+                }
+            }
+        }else { // User has not firebase logged in
             navController.navigate("auth") {
                 popUpTo("splash") { inclusive = true }
             }

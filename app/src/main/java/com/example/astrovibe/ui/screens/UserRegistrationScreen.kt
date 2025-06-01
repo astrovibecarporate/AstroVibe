@@ -1,9 +1,9 @@
 package com.example.astrovibe.ui.screens
 
 import android.app.DatePickerDialog
-import android.location.Address
 import android.os.Build
 import android.util.Log
+import android.util.Patterns
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,19 +11,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.example.astrovibe.data.models.UserRegistrationData
-import java.time.LocalDate
-import java.time.LocalTime
-import android.util.Patterns
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.astrovibe.data.models.BirthLocation
 import com.example.astrovibe.data.models.Resource
 import com.example.astrovibe.data.models.User
@@ -31,18 +30,30 @@ import com.example.astrovibe.ui.UserViewModel
 import com.example.astrovibe.ui.components.ClearableOutlinedTextField
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
+import java.time.LocalDate
+import java.time.LocalTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
 
     val viewModel: UserViewModel = hiltViewModel()
-    var name by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf<String?>(null) }
-    var email by remember { mutableStateOf("") }
 
-    var selectedDOB by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedTOB by remember { mutableStateOf(LocalTime.MIDNIGHT) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var gender by rememberSaveable { mutableStateOf<String?>(null) }
+    var email by rememberSaveable { mutableStateOf("") }
+
+    val localDateSaver = Saver<LocalDate?, String>(
+        save = { it?.toString() },
+        restore = { it?.let { LocalDate.parse(it) } }
+    )
+    val localTimeSaver = Saver<LocalTime, String>(
+        save = { it.toString() },
+        restore = { LocalTime.parse(it) }
+    )
+
+    var selectedDOB by rememberSaveable(stateSaver = localDateSaver) { mutableStateOf<LocalDate?>(null) }
+    var selectedTOB by rememberSaveable(stateSaver = localTimeSaver) { mutableStateOf(LocalTime.MIDNIGHT) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -59,23 +70,18 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
     val json = savedStateHandle?.getLiveData<String>("selected_address")?.observeAsState()
 
-    // Define default empty BirthLocation
     val defaultAddress = BirthLocation("", "", "", 0.0, 0.0)
 
-    // Use remember to parse JSON into BirthLocation, or fallback to default
     val selectedAddress = remember(json?.value) {
         json?.value?.let { Gson().fromJson(it, BirthLocation::class.java) } ?: defaultAddress
     }
 
-    // React when selectedAddress is updated (and not default)
     LaunchedEffect(json?.value) {
         if (json?.value != null) {
-            savedStateHandle?.remove<String>("selected_address") // Clear saved state after use
+            savedStateHandle?.remove<String>("selected_address")
         }
     }
 
-
-    // Date Picker Dialog
     if (showDatePicker) {
         val today = java.util.Calendar.getInstance()
         DatePickerDialog(
@@ -90,7 +96,6 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         ).show()
     }
 
-    // Time Picker Dialog
     if (showTimePicker) {
         val currentHour = selectedTOB.hour
         val currentMinute = selectedTOB.minute
@@ -127,16 +132,11 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         Spacer(Modifier.height(12.dp))
 
         Text("Select Gender")
-        Spacer(Modifier.height(6.dp))
-        Row {
-            listOf("Male", "Female", "Other").forEach { option ->
-                FilterChip(
-                    selected = gender == option,
-                    onClick = { gender = option },
-                    modifier = Modifier.padding(end = 8.dp),
-                    label = { Text(option) }
-                )
-            }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            GenderChip("Male", gender == "Male", Icons.Default.Male) { gender = "Male" }
+            GenderChip("Female", gender == "Female", Icons.Default.Female) { gender = "Female" }
+            GenderChip("Other", gender == "Other", Icons.Default.Person) { gender = "Other" }
         }
 
         Spacer(Modifier.height(12.dp))
@@ -184,29 +184,37 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
         }
         Spacer(Modifier.height(12.dp))
 
-        // Place of Birth input (readonly, clickable to navigate)
-        OutlinedTextField(
-            value = selectedAddress.toString(),
-            onValueChange = { /* no manual edit */ },
-            label = { Text("Place of Birth") },
-            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+        ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
                     Log.d("UserRegistrationScreen", "Place of Birth clicked")
                     navController.navigate("location_search")
-                },
-            readOnly = true
-        )
+                }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.LocationOn, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = selectedAddress.toString().ifBlank { "Select Place of Birth" },
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+
         Spacer(Modifier.height(24.dp))
 
         val userState by viewModel.user.collectAsState()
-
         var isSubmitted by remember { mutableStateOf(false) }
 
         Button(
             onClick = {
-                Log.e("UserRegistrationScreen", "Date ${selectedDOB.toString()}   time ${selectedTOB.toString()}")
+                Log.e("UserRegistrationScreen", "Date ${'$'}{selectedDOB.toString()}   time ${'$'}{selectedTOB.toString()}")
                 FirebaseAuth.getInstance().currentUser?.uid?.let { fid ->
                     val userData = User(
                         fid = fid,
@@ -215,8 +223,8 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
                         email = email ?: "",
                         imageUrl = "",
                         contactNumber = phoneNumber.removePrefix("+91"),
-                        dateOfBirth = selectedDOB.toString(),
-                        timeOfBirth = selectedTOB.withSecond(0).toString(),
+                        dateOfBirth = selectedDOB?.toString() ?: "",
+                        timeOfBirth = selectedTOB?.withSecond(0)?.toString() ?: "",
                         birthLocation = selectedAddress,
                         walletBalance = 0.0
                     )
@@ -232,11 +240,27 @@ fun UserRegistrationScreen(navController: NavController, phoneNumber: String) {
 
         LaunchedEffect(userState) {
             if (isSubmitted && userState is Resource.Success) {
+                val userData = (userState as Resource.Success<User>).data
+                viewModel.updateUserAppPreferences(userData)
                 navController.navigate("home") {
                     popUpTo("user_registration") { inclusive = true }
                 }
             }
         }
-
     }
+}
+
+@Composable
+fun GenderChip(label: String, selected: Boolean, icon: ImageVector, onClick: () -> Unit) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = label
+            )
+        }
+    )
 }
